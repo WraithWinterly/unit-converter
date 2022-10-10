@@ -2,12 +2,22 @@ import { useState, createRef } from 'react';
 import reactLogo from './assets/react.svg';
 
 import Header from './components/Header';
+import UnitGroup from './components/UnitGroup';
+import UnitSelector from './components/UnitSelector';
+
+import { UnitGroups } from './Types';
 
 function App() {
   const [currFormula, setCurrFormula] = useState(['foot', 'mile']);
+  const [currUnitGroup, setCurrUnitGroup] = useState('length');
 
   const inputLeft = createRef<HTMLInputElement>();
   const inputRight = createRef<HTMLInputElement>();
+
+  const unitGroups: UnitGroups = {
+    temperature: ['fahrenheit', 'celsius'],
+    length: ['foot', 'mile'],
+  };
 
   function inputKeyed(leftBox: boolean) {
     if (leftBox) {
@@ -45,16 +55,35 @@ function App() {
 
   return (
     <div className='App'>
-      <h1 className='text-2xl py-4'>Converter</h1>
-      <input
-        className='input input-primary'
-        ref={inputLeft}
-        onKeyUp={() => inputKeyed(true)}></input>
-      <span className='text-lg'>&nbsp;=&nbsp;</span>
-      <input
-        className='input input-primary'
-        ref={inputRight}
-        onKeyUp={() => inputKeyed(false)}></input>
+      <h1 className='text-2xl py-4'>Unit Converter</h1>
+
+      <UnitGroup unitGroups={unitGroups} currUnitGroup={currUnitGroup} />
+
+      <div className='flex'>
+        <div className='flex flex-col'>
+          <input
+            className='input input-primary'
+            ref={inputLeft}
+            onKeyUp={() => inputKeyed(true)}></input>
+          <UnitSelector
+            currentUnit={currFormula[0]}
+            unitGroups={unitGroups}
+            currUnitGroup={currUnitGroup}
+          />
+        </div>
+        <span className='text-lg'>&nbsp;=&nbsp;</span>
+        <div className='flex flex-col'>
+          <input
+            className='input input-primary'
+            ref={inputRight}
+            onKeyUp={() => inputKeyed(false)}></input>
+          <UnitSelector
+            currentUnit={currFormula[1]}
+            unitGroups={unitGroups}
+            currUnitGroup={currUnitGroup}
+          />
+        </div>
+      </div>
     </div>
   );
 }
