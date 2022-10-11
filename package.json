@@ -11,6 +11,7 @@
   "dependencies": {
     "@formkit/auto-animate": "^1.0.0-beta.3",
     "daisyui": "^2.31.0",
+    "mathjs": "^11.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

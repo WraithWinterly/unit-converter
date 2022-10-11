@@ -28,8 +28,6 @@ function UnitSelector({
       </label>
       <ul tabIndex={0} className='dropdown-content menu bg-base-200 p-2 shadow rounded-box w-52'>
         {unitGroups[currUnitGroup as keyof typeof unitGroups].map((unit, i) => {
-          console.log('curr', currentUnit);
-          console.log('unit', unit);
           return (
             <li
               key={id + i}
