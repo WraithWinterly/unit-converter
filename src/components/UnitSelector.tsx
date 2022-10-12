@@ -33,7 +33,7 @@ function UnitSelector({
               key={id + i}
               className={currentUnit === unit ? 'bg bg-primary' : ''}
               onClick={(e) => updateCurrFormula(boxNumber, e.currentTarget.innerText)}>
-              <a>{capitalize(unit)}</a>
+              <a className='py-2 px-4'>{capitalize(unit)}</a>
             </li>
           );
         })}

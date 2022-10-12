@@ -3,10 +3,14 @@ import React, { useEffect } from 'react';
 import { useState, createRef } from 'react';
 
 import Header from './Header';
-import UnitGroup from './UnitGroup';
+import UnitGroupSelector from './UnitGroupSelector';
 import UnitSelector from './UnitSelector';
 
+import Checkbox from './daisy/Checkbox';
+
 import { UnitGroups } from './Types';
+
+import { regexInputNotAllowed } from '../Utils';
 
 import { evaluate, format } from 'mathjs';
 
@@ -14,12 +18,13 @@ function UnitConverter() {
   const [currFormula, setCurrFormula] = useState(['foot', 'mile']);
   const [currUnitGroup, setCurrUnitGroup] = useState('length');
   const [useScientificNotation, setUseScientificNotation] = useState(true);
+  const [useHighPrecision, setUseHighPrecision] = useState(false);
 
   const inputLeft = createRef<HTMLInputElement>();
   const inputRight = createRef<HTMLInputElement>();
 
   const unitGroups: UnitGroups = {
-    temperature: ['fahrenheit', 'celsius'],
+    temperature: ['celsius', 'fahrenheit', 'kelvin'],
     length: [
       'kilometer',
       'meter',
@@ -35,7 +40,6 @@ function UnitConverter() {
   };
 
   function updateConverter(useForward: boolean) {
-    console.log(useScientificNotation);
     if (useForward) {
       let input = inputLeft.current!.value;
       input = input === '' ? '0' : input;
@@ -59,22 +63,19 @@ function UnitConverter() {
     try {
       const evalutation: number = evaluate(`${number} ${formula}`);
       let formation: string;
-      if (useScientificNotation) {
-        formation = format(evalutation, { precision: 14 });
-      } else {
-        formation = format(evalutation, { precision: 14, notation: 'fixed' });
-      }
 
-      // replace all units with a string
-      // regex allow only numbers and e and + and - and .
-      formation = formation.replace(/[^0-9eE\+\-\.]/g, '');
+      formation = format(evalutation, {
+        notation: useScientificNotation ? 'auto' : 'fixed',
+        precision: useHighPrecision ? 12 : 6,
+      });
+
+      formation = formation.replace(regexInputNotAllowed, '');
       // cut off trailing e's
       while (formation.charAt(formation.length - 1) === 'e') {
-        console.log(formation);
         formation = formation.slice(0, -1);
       }
       //Remove trailing zeros after point (0.00000000)
-      formation = formation.replace(/\.?0+$/, '');
+      formation = formation.replace(/(\.0*|(?<=(\..*))0*)$/, '');
 
       return formation;
     } catch (e) {
@@ -99,37 +100,57 @@ function UnitConverter() {
     });
   }
 
+  function updateCurrUnitGroup(newGroup: string) {
+    setCurrUnitGroup(newGroup);
+    inputLeft.current!.value = String(0);
+    inputRight.current!.value = String(0);
+    updateCurrFormula(0, unitGroups[newGroup as keyof typeof unitGroups][0]);
+    updateCurrFormula(1, unitGroups[newGroup as keyof typeof unitGroups][1]);
+  }
+
   useEffect(() => {
     updateConverter(true);
-  }, [useScientificNotation, currFormula]);
+  }, [useScientificNotation, useHighPrecision, currFormula]);
 
   return (
-    <div className='flex flex-col items-center bg-base-200 w-[34rem] rounded-2xl py-4'>
-      <h1 className='text-2xl w-full px-10'>Unit Converter</h1>
+    <div className='flex flex-col bg-base-200 rounded-2xl py-4 sm:px-12 px-4 relative'>
+      <h1 className='text-2xl w-full justify-self-start'>Unit Converter</h1>
 
-      <UnitGroup unitGroups={unitGroups} currUnitGroup={currUnitGroup} />
-
-      {/* Check Box */}
-      <div className='form-control'>
-        <label className='label cursor-pointer'>
-          <input
-            type='checkbox'
-            defaultChecked={useScientificNotation}
-            onChange={() => {
-              setUseScientificNotation((use) => !use);
-            }}
-            className='checkbox checkbox-primary'
-          />
-          <span className='label-text'>Allow Scientific Notation</span>
-        </label>
+      {/* CheckBoxes */}
+      <div className='form-control mt-2 sm:absolute sm:right-1 order-3'>
+        <Checkbox
+          text={'Use High Precision'}
+          defaultChecked={useHighPrecision}
+          clickAction={(checked: boolean) => setUseHighPrecision(checked)}
+        />
+        <Checkbox
+          text={'Use Scientific Notation'}
+          defaultChecked={useScientificNotation}
+          clickAction={(checked: boolean) => setUseScientificNotation(checked)}
+        />
       </div>
 
-      <div className='flex'>
-        <div className='flex flex-col'>
+      <UnitGroupSelector
+        unitGroups={unitGroups}
+        currUnitGroup={currUnitGroup}
+        updateCurrUnitGroup={updateCurrUnitGroup}
+      />
+
+      {/* Input Boxes and Buttons */}
+      <div className='flex w-full justify-between'>
+        <div className='flex flex-col sm:w-48 w-36'>
           <input
             className='input input-primary'
             ref={inputLeft}
-            onKeyUp={() => updateConverter(true)}></input>
+            defaultValue={0}
+            onKeyPress={(e) => {
+              const str = e.key;
+              if (str.match(regexInputNotAllowed)) e.preventDefault();
+            }}
+            onKeyUp={(e) => {
+              e.currentTarget.value = e.currentTarget.value.replace(regexInputNotAllowed, '');
+              updateConverter(true);
+            }}></input>
           <UnitSelector
             boxNumber={0}
             updateCurrFormula={updateCurrFormula}
@@ -139,10 +160,15 @@ function UnitConverter() {
           />
         </div>
         <span className='text-lg py-2 px-2'>&nbsp;=&nbsp;</span>
-        <div className='flex flex-col'>
+        <div className='flex flex-col sm:w-48 w-36'>
           <input
             className='input input-primary'
             ref={inputRight}
+            defaultValue={0}
+            onKeyPress={(e) => {
+              const str = e.key;
+              if (str.match(regexInputNotAllowed)) e.preventDefault();
+            }}
             onKeyUp={() => updateConverter(false)}></input>
           <UnitSelector
             boxNumber={1}
