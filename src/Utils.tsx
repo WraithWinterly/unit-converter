@@ -1,6 +1,10 @@
-export function capitalize(str: string): string {
-  const lower = str.toLowerCase();
-  return str.charAt(0).toUpperCase() + lower.slice(1);
+export function capitalize(str: string, lowerRest = true): string {
+  str = str
+    .replace(/([A-Z])/g, (match) => ` ${match}`)
+    .replace(/^./, (match) => match.toUpperCase())
+    .replaceAll('_', ' ')
+    .trim();
+  return str;
 }
 
 // regex allow only numbers and e and + and - and .

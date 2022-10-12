@@ -8,23 +8,42 @@ import UnitSelector from './UnitSelector';
 
 import Checkbox from './daisy/Checkbox';
 
-import { UnitGroups } from './Types';
+import { UnitGroups } from '../Types';
 
 import { regexInputNotAllowed } from '../Utils';
 
 import { evaluate, format } from 'mathjs';
+import UnitInputField from './UnitInputField';
 
 function UnitConverter() {
   const [currFormula, setCurrFormula] = useState(['foot', 'mile']);
   const [currUnitGroup, setCurrUnitGroup] = useState('length');
   const [useScientificNotation, setUseScientificNotation] = useState(true);
-  const [useHighPrecision, setUseHighPrecision] = useState(false);
-
+  const [useRoundNumber, setRoundNumber] = useState(true);
+  const [lastBoxChanged, setLastBoxChanged] = useState(0);
   const inputLeft = createRef<HTMLInputElement>();
   const inputRight = createRef<HTMLInputElement>();
 
   const unitGroups: UnitGroups = {
     temperature: ['celsius', 'fahrenheit', 'kelvin'],
+    digitalData: [
+      'kilobit',
+      'kilobyte',
+      'megabit',
+      'megabyte',
+      'gigabit',
+      'gigabyte',
+      'terabit',
+      'terabyte',
+      'petabit',
+      'petabyte',
+      'exabit',
+      'exabyte',
+      'zettabit',
+      'zettabyte',
+      'yottabit',
+      'yottabyte',
+    ],
     length: [
       'kilometer',
       'meter',
@@ -37,6 +56,50 @@ function UnitConverter() {
       'foot',
       'inch',
     ],
+    mass: [
+      'kilogram',
+      'gram',
+      'milligram',
+      'microgram',
+      'stone',
+      'ton',
+      'lb',
+      'ounce',
+    ],
+    time: [
+      'nanosecond',
+      'microsecond',
+      'millisecond',
+      'seconds',
+      'minute',
+      'hour',
+      'day',
+      'week',
+      'month',
+      'year',
+      'decade',
+      'century',
+      'millennium',
+    ],
+    frequency: [
+      'hertz',
+      'kilohertz',
+      'megahertz',
+      'gigahertz',
+      'terahertz',
+      'petahertz',
+      'exahertz',
+      'yottahertz',
+    ],
+    angle: [
+      'radian',
+      'degree',
+      'gradian',
+      'milliradian',
+      'arcminute',
+      'arcsecond',
+    ],
+    pressure: ['atm', 'psi', 'torr', 'bar'],
   };
 
   function updateConverter(useForward: boolean) {
@@ -47,7 +110,7 @@ function UnitConverter() {
         inputRight.current!.value = formulate(true, input);
       }
     } else {
-      let input = inputLeft.current!.value;
+      let input = inputRight.current!.value;
       input = input === '' ? '0' : input;
       if (input != null) {
         inputLeft.current!.value = formulate(false, input);
@@ -66,7 +129,7 @@ function UnitConverter() {
 
       formation = format(evalutation, {
         notation: useScientificNotation ? 'auto' : 'fixed',
-        precision: useHighPrecision ? 12 : 6,
+        precision: useRoundNumber ? 4 : 12,
       });
 
       formation = formation.replace(regexInputNotAllowed, '');
@@ -109,8 +172,12 @@ function UnitConverter() {
   }
 
   useEffect(() => {
+    updateConverter(lastBoxChanged === 0 ? true : false);
+  }, [useScientificNotation, useRoundNumber]);
+
+  useEffect(() => {
     updateConverter(true);
-  }, [useScientificNotation, useHighPrecision, currFormula]);
+  }, [currFormula]);
 
   return (
     <div className='flex flex-col bg-base-200 rounded-2xl py-4 sm:px-12 px-4 relative'>
@@ -119,9 +186,9 @@ function UnitConverter() {
       {/* CheckBoxes */}
       <div className='form-control mt-2 sm:absolute sm:right-1 order-3'>
         <Checkbox
-          text={'Use High Precision'}
-          defaultChecked={useHighPrecision}
-          clickAction={(checked: boolean) => setUseHighPrecision(checked)}
+          text={'Round Number'}
+          defaultChecked={useRoundNumber}
+          clickAction={(checked: boolean) => setRoundNumber(checked)}
         />
         <Checkbox
           text={'Use Scientific Notation'}
@@ -130,6 +197,7 @@ function UnitConverter() {
         />
       </div>
 
+      {/* Select Unit Group */}
       <UnitGroupSelector
         unitGroups={unitGroups}
         currUnitGroup={currUnitGroup}
@@ -138,46 +206,27 @@ function UnitConverter() {
 
       {/* Input Boxes and Buttons */}
       <div className='flex w-full justify-between'>
-        <div className='flex flex-col sm:w-48 w-36'>
-          <input
-            className='input input-primary'
-            ref={inputLeft}
-            defaultValue={0}
-            onKeyPress={(e) => {
-              const str = e.key;
-              if (str.match(regexInputNotAllowed)) e.preventDefault();
-            }}
-            onKeyUp={(e) => {
-              e.currentTarget.value = e.currentTarget.value.replace(regexInputNotAllowed, '');
-              updateConverter(true);
-            }}></input>
-          <UnitSelector
-            boxNumber={0}
-            updateCurrFormula={updateCurrFormula}
-            currentUnit={currFormula[0]}
-            unitGroups={unitGroups}
-            currUnitGroup={currUnitGroup}
-          />
-        </div>
+        <UnitInputField
+          boxNumber={0}
+          refElm={inputLeft}
+          setLastBoxChanged={setLastBoxChanged}
+          updateConverter={updateConverter}
+          updateCurrFormula={updateCurrFormula}
+          currentUnit={currFormula[0]}
+          unitGroups={unitGroups}
+          currUnitGroup={currUnitGroup}
+        />
         <span className='text-lg py-2 px-2'>&nbsp;=&nbsp;</span>
-        <div className='flex flex-col sm:w-48 w-36'>
-          <input
-            className='input input-primary'
-            ref={inputRight}
-            defaultValue={0}
-            onKeyPress={(e) => {
-              const str = e.key;
-              if (str.match(regexInputNotAllowed)) e.preventDefault();
-            }}
-            onKeyUp={() => updateConverter(false)}></input>
-          <UnitSelector
-            boxNumber={1}
-            updateCurrFormula={updateCurrFormula}
-            currentUnit={currFormula[1]}
-            unitGroups={unitGroups}
-            currUnitGroup={currUnitGroup}
-          />
-        </div>
+        <UnitInputField
+          boxNumber={1}
+          refElm={inputRight}
+          setLastBoxChanged={setLastBoxChanged}
+          updateConverter={updateConverter}
+          updateCurrFormula={updateCurrFormula}
+          currentUnit={currFormula[1]}
+          unitGroups={unitGroups}
+          currUnitGroup={currUnitGroup}
+        />
       </div>
     </div>
   );
