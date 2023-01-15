@@ -33,16 +33,14 @@ function UnitInputField({
         className='input input-primary'
         ref={refElm}
         defaultValue={0}
-        onKeyPress={(e) => {
-          const str = e.key;
+        onChange={(e) => {
+          const str = e.currentTarget.value;
           if (str.match(regexInputNotAllowed)) e.preventDefault();
-        }}
-        onKeyUp={(e) => {
-          if (e.key.match(regexInputNotAllowed)) {
-            return;
-          }
           setLastBoxChanged(boxNumber);
-          e.currentTarget.value = e.currentTarget.value.replace(regexInputNotAllowed, '');
+          e.currentTarget.value = e.currentTarget.value.replace(
+            regexInputNotAllowed,
+            ''
+          );
           updateConverter(boxNumber === 0 ? true : false);
         }}></input>
       <UnitSelector
